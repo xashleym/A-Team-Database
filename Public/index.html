@@ -1,0 +1,77 @@
+<!-- Alyce Harlan, Ashley Folse, Ashley Morrison -->
+<!-- Team 97, "A" Team --> 
+<!-- Inked In Database  -->
+<!--index page to display list of companies on the website, and link to User & File management pages -->
+
+
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Inkedin - Administrative Interface</title>
+	<link rel="stylesheet" href="styles.css">
+	</head>
+	<body>
+		<h1>Inked-in E-Signature Service</h1>
+		<div class="collection-container">
+			<table id="companies-table">
+	<thead>
+		<tr>
+                    <th><a href="companies.html">Manage Companies</a></th>
+                    <th>Manage Users</th>
+                    <th>Manage Files</th>
+                    <th>Manage Forms</th>
+                    <th><a href="signatures.html">Manage Signatures</a></th>
+                </tr>
+            </thead>
+            <tbody>
+                    <!-- Dynamically add rows here -->
+            </tbody>
+        </table>
+        </div>
+        <script>
+            // Fetch data from the backend when the page loads
+            window.onload = function() {
+                fetch('http://classwork.engr.oregonstate.edu:9865/companies')
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();  // Parse the JSON response
+                    })
+                    .then(companies => {
+                        const tableBody = document.querySelector('#companies-table tbody');
+                        if (companies.length === 0) {
+                            tableBody.innerHTML = '<tr><td colspan="5">No companies found</td></tr>';
+                        } else {
+                            companies.forEach(company => {
+                                // Create a new row for each company
+                                const row = document.createElement('tr');
+                                row.classList.add('collection-item');
+        
+                                // Insert HTML for each column in the row
+                                row.innerHTML = `
+                                    <td><strong>${company.company_name}</strong></td>
+                                    <td><a href="users.html?usersCompanyId=${company.company_id}">${company.company_name} Users</a></td>
+                                    <td><a href="files.html?companyId=${company.company_id}">${company.company_name} Files</a></td>
+                                    <td><a href="forms.html?companyId=${company.company_id}">${company.company_name} Forms</a></td>
+                                    <td><strong>${company.company_name} Signatures</strong></td>
+                                `;
+        
+                                // Append the new row to the table body
+                                tableBody.appendChild(row);
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching companies:', error);
+                        const tableBody = document.querySelector('#companies-table tbody');
+                        tableBody.innerHTML = '<tr><td colspan="5">Failed to load companies data</td></tr>';
+                    });
+            }
+        </script>
+        
+        
+            </body>
+        </html>
