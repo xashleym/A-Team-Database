@@ -1,0 +1,168 @@
+<!-- Alyce Harlan, Ashley Folse, Ashley Morrison -->
+<!-- Team 97, "A" Team -->
+<!-- Inked In Database  -->
+<!-- Signatures page will display the current signatures of the company, 
+    and allow an admin signature to manage signature information -->
+<!--Date time picker created with guidance from 
+https://www.w3schools.com/tags/tryit.asp?filename=tryhtml5_input_type_datetime-local-->
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Signatures</title>
+  <link rel="stylesheet" href="styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+    
+<body>
+
+  <header>
+    <h1>Manage Signatures</h1>
+    <button onclick="window.location.href='index.html'">Back to
+      Companies</button>
+  </header>
+
+  <section id="signature-list">
+    <h2>Signatures for Company: <span id="company-name"></span></h2>
+    <table id="signatures-table">
+      <thead>
+        <tr>
+          <th>Signature ID</th>
+          <th>Date Signed</th>
+          <th>User Name</th>
+          <th>Form Name</th>
+        </tr>
+      </thead>
+      <tbody id="signatures-table-body">
+        <!-- Table rows will be dynamically inserted here -->
+      </tbody>
+    </table>
+  </section>
+
+  <div id="add-signature-form">
+    <h3>Add New Signature</h3>
+    <form id="addSignature">
+      <label>Name:</label>
+      <input type="text" name="signatureName" required>
+      <label for="date_signed">Date Signed:</label>
+      <input type="datetime-local" id="date_signed" name="date_signed">
+      <label>Form Name:</label>
+      <input type="text" name="formId" required>
+      <button type="submit">Add Signature</button>
+    </form>
+  </div>
+
+  <script>
+document.addEventListener('DOMContentLoaded', function () {
+  const addSignatureForm = document.getElementById('addSignature');
+      
+// Function to READ signatures
+function fetchAndRenderSignatures() {
+const signatureTableBody = document.getElementById('signatures-table-body');
+signatureTableBody.innerHTML = ''; // Clear the table before populating
+
+fetch('/signatures') // Using relative URL here
+  .then(response => {
+    if (!response.ok) {
+      throw new Error('Failed to fetch signatures');
+    }
+    return response.json();
+  })
+  .then(data => {
+    console.log('Fetched Signatures:', data);
+    data.forEach(signature => {
+      const row = document.createElement('tr');
+      row.setAttribute('data-signature-id', signature.signature_id); // For delete reference
+      row.innerHTML = `
+        <td>${signature.signature_id}</td>
+        <td>${new Date(signature.date_signed).toLocaleString()}</td>
+        <td>${signature.fk_sig_user_name}</td>
+        <td>${signature.fk_sig_form_name}</td>
+        <td><button onclick="deleteSignatures(${signature.signature_id})">Delete</button></td>
+      `;
+      signatureTableBody.appendChild(row);
+    });
+  })
+  .catch(error => {
+    console.error('Error fetching signatures:', error);
+    alert('Failed to load signatures. Please try again later.');
+  });
+}
+
+// Function to delete a signature
+function deleteSignatures(signatureId) {
+  if (confirm('Are you sure you want to delete this signature?')) {
+    fetch(`/signatures/deleteSignature/${signatureId}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    })
+      .then(response => {
+        if (!response.ok) {
+          return response.json().then(errData => {
+            throw new Error(errData.error || 'Failed to delete signature');
+          });
+        }
+        return response.json();
+      })
+      .then(data => {
+        console.log('Delete response:', data);
+        const rowToRemove = document.querySelector(`tr[data-signature-id="${signatureId}"]`);
+        if (rowToRemove) {
+          rowToRemove.remove();
+        }
+        alert(data.message || 'Signature deleted successfully');
+      })
+      .catch(error => {
+        console.error('Error deleting signature:', error);
+        alert(`Delete failed: ${error.message}`);
+      });
+  }
+}
+
+    //Function to add a signature
+  addSignatureForm.addEventListener('submit', function(event) {
+    event.preventDefault();
+    const formData = new FormData(addSignatureForm);
+    const signatureData = {
+      signatureName: formData.get('signatureName'),
+      date_signed: formData.get('date_signed'),
+      formId: formData.get('formId')
+    };
+
+    fetch('/signatures/addSignature', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({signatureData}),
+    })
+    .then(response => {
+      if(response.ok) {
+        return response.json();
+      } else {
+        throw new Error('Failed to add signature.');
+      }
+    })
+    .then(data => {
+      console.log('New Signature Added:', data);
+      alert('Signature Added successfully');
+      fetchAndRenderSignatures();
+      addSignatureForm.reset();
+    })
+    .catch(error => {
+      console.error('Error adding signature:', error);
+      alert('Failed to add signature. Please try again later.');
+    });
+  });
+  // Initial fetch of signatures
+  fetchAndRenderSignatures();
+});
+
+  </script>
+
+</body>
+
+</html>
