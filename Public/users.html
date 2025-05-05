@@ -1,0 +1,178 @@
+<!-- Alyce Harlan, Ashley Folse, Ashley Morrison -->
+<!-- Team 97, "A" Team --> 
+<!-- Inked In Database  -->
+<!--users page will display the current users of the company, and allow an admin user to manage user information -->
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Users</title>
+  <link rel="stylesheet" href="styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <header>
+    <h1>Manage Users</h1>
+    <button onclick="window.location.href='index.html'">Back to Companies</button>
+  </header>
+
+  <section id="user-list">
+    <h2>Users for Company: </h2>
+    <table>
+      <thead>
+        <tr>
+          <th>User ID</th>
+          <th>User Name</th>
+          <th>Email</th>
+	  <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="users-table-body">
+        <!-- Table rows will be dynamically inserted here -->
+      </tbody>
+    </table>
+  </section>
+
+  <div id="add-user-form">
+  <form id="addUserForm">
+    <label for="addUserName">User Name:</label>
+    <input type="text" id="addUserName" required>
+
+    <label for="addUserEmail">Email:</label>
+    <input type="email" id="addUserEmail" required>
+
+    <button type="submit">Add User</button>
+</form> 
+
+
+  <script>
+
+    // Function to delete a user
+    function deleteUser(userId) {
+      if (confirm('Are you sure you want to delete this user?')) {
+        fetch(`/users/deleteUser/${userId}`, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' }
+        })
+        .then(response => response.json())
+        .then(data => {
+          const rowToRemove = document.querySelector(`tr[data-user-id="${userId}"]`);
+          if (rowToRemove) {
+            rowToRemove.remove();
+          }
+          alert(data.message || 'User deleted successfully');
+        })
+        .catch(error => {
+          console.error('Error deleting user:', error);
+          alert(`Delete failed: ${error.message}`);
+        });
+      }
+    }  
+
+    document.addEventListener('DOMContentLoaded', function() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const usersCompanyId = urlParams.get('usersCompanyId');
+      const usersTableBody = document.getElementById('users-table-body');
+
+      if (!usersCompanyId) {
+        alert('Company ID is required.');
+        return;
+      }
+
+      // Fetch users for the specific company
+      fetch(`/users?usersCompanyId=${usersCompanyId}`)
+        .then(response => response.json())
+        .then(data => {
+          data.forEach(user => {
+            const row = document.createElement('tr');
+            row.setAttribute('data-user-id', user.user_id);
+            row.innerHTML = `
+              <td>${user.user_id}</td>
+              <td>${user.user_name}</td>
+              <td>${user.user_email}</td>
+              <td>
+                <button onclick="deleteUser('${user.user_id}')">Delete</button>
+              </td>
+            `;
+            usersTableBody.appendChild(row);
+          });
+        })
+        .catch(error => {
+          console.error('Error fetching users:', error);
+          alert('An error occurred while fetching users.');
+        });
+
+      // Handle form submission to add a new user
+      const addUserForm = document.getElementById('addUserForm');
+      addUserForm.addEventListener('submit', function(event) {
+        event.preventDefault();
+
+        const userName = document.getElementById('addUserName').value;
+        const userEmail = document.getElementById('addUserEmail').value;
+
+        fetch('/users/addUser', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ companyId: usersCompanyId, userName, userEmail })
+        })
+        .then(response => response.json())
+        .then(newUser => {
+          // Add the new user to the table in the UI
+          const row = document.createElement('tr');
+          row.setAttribute('data-user-id', newUser.user_id);
+          row.innerHTML = `
+            <td>${newUser.user_id}</td>
+            <td>${newUser.user_name}</td>
+            <td>${newUser.user_email}</td>
+            <td>
+              <button onclick="deleteUser('${newUser.user_id}')">Delete</button>
+            </td>
+          `;
+          usersTableBody.appendChild(row);
+        })
+        .catch(error => console.error('Error adding user:', error));
+      });
+
+// Edit user function
+function editUser(userId) {
+  // Fetch user details and populate the edit form (you could implement a modal instead)
+  const userRow = document.querySelector(`#users-table-body tr[data-id="${userId}"]`);
+  const userName = userRow.querySelector('td:nth-child(2)').textContent;
+  const userEmail = userRow.querySelector('td:nth-child(3)').textContent;
+
+  document.getElementById('userName').value = userName;
+  document.getElementById('userEmail').value = userEmail;
+
+  // Update form action (for example, changing a hidden field to trigger PUT request for editing)
+  const editUserForm = document.getElementById('editUser');
+  editUserForm.addEventListener('submit', function(event) {
+    event.preventDefault();
+    // Send PUT request to update the user
+    const updatedUserName = document.getElementById('userName').value;
+    const updatedUserEmail = document.getElementById('userEmail').value;
+
+    fetch(`users/editUser/${userId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ updatedUserName, updatedUserEmail })
+    })
+    .then(response => response.json())
+    .then(updatedUser => {
+      // Update the table row with the new details
+      userRow.querySelector('td:nth-child(2)').textContent = updatedUser.user_name;
+      userRow.querySelector('td:nth-child(3)').textContent = updatedUser.user_email;
+      // Reset form
+      editUserForm.reset();
+    })
+    .catch(error => console.error('Error updating user:', error));
+  });
+}
+ });
+  </script>
+
+</body>
+</html>
