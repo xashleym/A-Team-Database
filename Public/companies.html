@@ -1,0 +1,237 @@
+<!-- Alyce Harlan, Ashley Folse, Ashley Morrison -->
+<!-- Team 97, "A" Team -->
+<!-- Inked In Database  -->
+<!-- Companies page will display the current list of companies, 
+    and allow an admin user to manage companies-->\
+
+<!-- # Citation for displaying dropdowns on Files, Forms pages
+# Date: Summer term 2024
+# Adapted from the course project of the Web Development class here at OSU, course resources
+# https://canvas.oregonstate.edu/courses/1933705/pages/exploration-intro-to-html?module_item_id=23487325
+# https://www.w3schools.com/tags/tag_select.asp -->
+
+    <!DOCTYPE html>
+    <html lang="en">
+    
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Manage Companies</title>
+      <link rel="stylesheet" href="styles.css">
+      <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    </head>
+    
+    <body>
+      <header>
+        <h1>Select Company To Manage</h1>
+        <button onclick="window.location.href='index.html'">Back to
+          Companies</button>
+      </header>
+    
+      <section id="company-list">
+        <h2>Current Companies</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Company ID</th>
+              <th>Company Name</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="companies-table-body">
+            <!-- Table rows will be dynamically inserted here -->
+          </tbody>
+        </table>
+      </section>
+    
+      <div id="insert">
+        <form id="addCompanyForm">
+          <legend><strong>Add Company</strong></legend>
+          <fieldset class="fields">
+            <label for="companyNameInput">Name:</label>
+            <input type="text" name="companyName" id="companyNameInput" required>
+          </fieldset>
+          <button type="submit" class="btn">Add Company</button>
+        </form>
+      </div>
+    
+      <div id="update">
+        <form id="editCompany">
+          <legend><strong>Update Company</strong></legend>
+          <fieldset class="fields">
+            <label for="companySelect">Company:</label>
+            <select id="companySelect" required></select>
+      
+            <label for="newCompanyNameInput">New Name:</label>
+            <input type="text" name="companyName" id="newCompanyNameInput" required>
+          </fieldset>
+          <button type="submit" class="btn" id="updateCompanyBtn">Save Update Company</button>
+        </form> 
+      </div>
+    
+      <script>
+        // Function to populate the company dropdown
+function populateCompanyDropDown() {
+  const companySelect = document.getElementById('companySelect');
+  
+  fetch('/companies')  // Assuming a route that returns all companies
+    .then(response => response.json())
+    .then(companies => {
+      companySelect.innerHTML = companies
+        .map(company => 
+          `<option value="${company.company_id}">${company.company_id}</option>`  // Corrected line
+        )
+        .join('');
+    })
+    .catch(error => {
+      console.error('Error populating company dropdown:', error);
+      alert('Failed to load companies. Please try again.');
+    });
+}
+    
+        // Function to update the company details
+        function editCompany(event) {
+          event.preventDefault();  // Prevent default form submission
+          
+          const companySelect = document.getElementById('companySelect');
+          const companyId = companySelect.value;  // Get the company ID from the dropdown
+          const companyName = document.getElementById('newCompanyNameInput').value;
+    
+          if (!companyId || !companyName) {
+            alert('Please select a company and provide a new name.');
+            return;
+          }
+    
+          // Sending update request to server
+          fetch(`/companies/editCompany/${companyId}`, {
+            method: 'POST',  // Change to POST method
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ companyName })
+          })
+          .then(response => {
+            if (!response.ok) {
+              return response.json().then(errData => {
+                throw new Error(errData.error || 'Failed to update company');
+              });
+            }
+            return response.json();
+          })
+          .then(data => {
+            console.log('Company updated:', data);
+            alert('Company updated successfully');
+            fetchAndRenderCompanies();  // Refresh the company list
+          })
+          .catch(error => {
+            console.error('Error updating company:', error);
+            alert(`Update failed: ${error.message}`);
+          });
+        }
+    
+        // Event listener for the form submit
+        document.getElementById('editCompany').addEventListener('submit', editCompany);
+    
+        // Populate the company dropdown on page load
+        document.addEventListener('DOMContentLoaded', populateCompanyDropDown);
+    
+        // Function to READ companies
+        function fetchAndRenderCompanies() {
+            const companyTableBody = document.getElementById('companies-table-body');
+            companyTableBody.innerHTML = ''; // Clear the table before populating
+    
+            fetch('/companies') // Using relative URL here
+              .then(response => {
+                if (!response.ok) {
+                  throw new Error('Failed to fetch companies');
+                }
+                return response.json();
+              })
+              .then(data => {
+                console.log('Fetched Companies:', data);
+                data.forEach(company => {
+                  const row = document.createElement('tr');
+                  row.setAttribute('data-company-id', company.company_id); // For delete reference
+                  row.innerHTML = `
+                    <td>${company.company_id}</td>
+                    <td>${company.company_name}</td>
+                    <td>
+                      <button onclick="deleteCompany('${company.company_id}')">Delete</button>
+                    </td>
+                  `;
+                  companyTableBody.appendChild(row);
+                });
+              })
+              .catch(error => {
+                console.error('Error fetching companies:', error);
+                alert('Failed to load companies. Please try again later.');
+              });
+        }
+    
+        // Function to DELETE a company
+        function deleteCompany(companyId) {
+          if (confirm('Are you sure you want to delete this company? This will also delete all associated users and files.')) {
+            fetch(`/companies/deleteCompany/${companyId}`, {
+              method: 'DELETE',
+              headers: { 'Content-Type': 'application/json' },
+            })
+              .then(response => {
+                if (!response.ok) {
+                  return response.json().then(errData => {
+                    throw new Error(errData.error || 'Failed to delete company');
+                  });
+                }
+                return response.json();
+              })
+              .then(data => {
+                console.log('Delete response:', data);
+                alert(data.message || 'Company deleted successfully');
+                fetchAndRenderCompanies(); // Refresh the table
+              })
+              .catch(error => {
+                console.error('Error deleting company:', error);
+                alert(`Delete failed: ${error.message}`);
+              });
+          }
+        }
+    
+        document.addEventListener('DOMContentLoaded', function () {
+          const addCompanyForm = document.getElementById('addCompanyForm');
+    
+          // Fetch and render company list on page load
+          fetchAndRenderCompanies();
+    
+          addCompanyForm.addEventListener('submit', function (event) {
+            event.preventDefault(); // Prevent default form submission
+            const formData = new FormData(addCompanyForm);
+            const companyName = formData.get('companyName');
+    
+            fetch('/companies/addCompany', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ companyName }),
+            })
+              .then(response => {
+                if (response.ok) {
+                  return response.json();
+                } else {
+                  throw new Error('Failed to add company.');
+                }
+              })
+              .then(data => {
+                console.log('New Company Added:', data);
+                alert('Company added successfully');
+                fetchAndRenderCompanies(); // Refresh the table
+                addCompanyForm.reset(); // Clear the form after submission
+              })
+              .catch(error => {
+                console.error('Error adding company:', error);
+                alert('Failed to add company. Please try again later.');
+              });
+          });
+        });
+      </script>
+    
+    </body>
+    
+    </html>
