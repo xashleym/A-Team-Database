@@ -1,0 +1,59 @@
+/* Alyce Harlan, Ashley Folse, Ashley Morrison 
+ Team 97, "A" Team 
+Inked In Database 
+index page stylesheet*/
+
+/*general page style*/
+body {
+    font-family: 'Open Sans', Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f9f9f9;
+    color:darkblue
+}
+
+/*header style*/
+h1,h2,h3 {
+    text-align: center;
+    margin-top: 20px;
+    font-family: 'Open Sans', sans-serif;
+    font-weight: 700;
+    color: darkblue;
+}
+
+/*table container style*/
+.collection-container {
+border: 6px solid rgb(2, 64, 82);
+padding: 32px;
+margin: 20px auto;
+width:80%;
+background-color: #f9f9f9;
+box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.collection-item {
+border: 2px solid rgb(10, 10, 10);
+border-radius: 8px;
+width: 600px;
+margin-top: 16px;
+padding:8px;
+background-color: #f9f9f9;
+}
+
+
+/*table styles*/
+table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  th, td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+  }
+
+  th {
+    background-color: rgb(200, 200, 200);
+    font-weight: bold;
+  }
